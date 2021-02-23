@@ -1,0 +1,462 @@
+---
+subtitle: "`r Sys.Date()`"
+output:
+  word_document:
+    reference_docx: mall.docx
+params:
+  id: 750 # Börsdata id - id 750 är Evolution
+  key: "<API KEY>" # Börsdata API nyckel
+---
+```{r check, echo=FALSE, message=FALSE}
+# Kontrollerar att API nyckeln är laddad
+if(httr::GET(paste0("https://apiservice.borsdata.se/v1/instruments/kpis/241/last/latest?authKey=",params$key))[2]!=200){stop("Lägg in din Börsdata API nyckel på rad 8 i dokumentet")}
+```
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(borsdata)
+library(rvest)
+library(flextable)
+set_flextable_defaults(big.mark = ",", 
+  font.size = 12,digits = 0, theme_fun = theme_vanilla,
+  padding.bottom = 0, 
+  padding.left = 4,
+  padding.right = 4,
+  padding.top = 2,
+  background.color = "#FFEEEB")
+ins<-fetch_instruments(params$key)
+listdate<-ins %>% filter(insId == params$id) %>% select(listingDate)
+listdate<-lubridate::as_date(listdate[1,1])
+co<-fetch_countries(params$key)
+branches<-fetch_branches(params$key)
+sector<-fetch_sectors(params$key)
+markets<-fetch_markets(params$key)
+
+# Skapar en ny frame
+ins<-ins %>% select(insId,name,ticker,marketId,branchId,sectorId,countryId)
+
+# country
+co<-co %>% rename(countryId=id)
+ins<-left_join(x = ins,y = co,by="countryId")
+
+# sector
+bran<-sector %>% rename(sectorId=id)
+ins<-left_join(x = ins,y = bran,by="sectorId")
+
+# branches
+bran<-branches %>% rename(branchId=id)
+ins<-left_join(x = ins,y = bran,by="branchId")
+
+# markets
+bran<-markets %>% rename(marketId=id)
+ins<-left_join(x = ins,y = bran,by="marketId")
+
+# Skapar en ny dataframe
+frame<-ins %>% select(insId,name.x,ticker,name.y,name.x.x,name.y.y,name,exchangeName) 
+colnames(frame)<-c("id","Bolagsnamn","Ticker","Land","Sektor","Bransch","Marknadsplats","Handelsplats")
+frame
+
+bolagsnamn<-frame %>% filter(id == params$id) %>% select(Bolagsnamn) %>% as.character()
+Ticker<-frame %>% filter(id == params$id) %>% select(Ticker) %>% as.character()
+Land<-frame %>% filter(id == params$id) %>% select(Land) %>% as.character()
+Sektor<-frame %>% filter(id == params$id) %>% select(Sektor) %>% as.character()
+Branschs<-frame %>% filter(id == params$id) %>% select(Bransch) %>% as.character()
+Marknadsplats<-frame %>% filter(id == params$id) %>% select(Marknadsplats) %>% as.character()
+Handelsplats<-frame %>% filter(id == params$id) %>% select(Handelsplats) %>% as.character()
+```
+
+---
+title: "Bolagsanalys av `r bolagsnamn`" 
+---
+
+# Nyckelfaktorer
+
+### Nyckelfaktor 1
+
+- 
+
+### Nyktorfaktor 2
+
+- 
+
+# Om `r bolagsnamn` 
+
+`r bolagsnamn` (`r Ticker`) är verksamt inom branschen `r Branschs` som är en del av sektorn `r Sektor`. `r bolagsnamn` noterades `r listdate` och blev då en del av marknadsplatsen `r Marknadsplats` i `r Land`.
+
+
+## Affärsidé
+
+# Verksamhet och produkter
+
+## Risker
+
+## Konkurrenter
+
+### Moats
+
+# Ledning och styrelse
+
+## Insiderhandel
+
+```{r, echo=FALSE, message=FALSE}
+url_bolagsnamn<-str_replace_all(bolagsnamn,"\\s","+")
+
+# Special case...
+if(url_bolagsnamn == "Fast+Balder"){url_bolagsnamn<-"Balder"}
+
+url_pg1<-paste0("https://marknadssok.fi.se/Publiceringsklient/sv-SE/Search/Search?SearchFunctionType=Insyn&Utgivare=",url_bolagsnamn,"&PersonILedandeSt%C3%A4llningNamn=&Transaktionsdatum.From=&Transaktionsdatum.To=&Publiceringsdatum.From=&Publiceringsdatum.To=&button=search&Page=",1)
+html<-read_html(url_pg1)
+ds<-html_table(html)[[1]]
+ds$Volym<-as.numeric(str_replace_all(ds$Volym,",",""))
+df<-ds
+for(i in 2){
+  url<-paste0("https://marknadssok.fi.se/Publiceringsklient/sv-SE/Search/Search?SearchFunctionType=Insyn&Utgivare=",url_bolagsnamn,"&PersonILedandeSt%C3%A4llningNamn=&Transaktionsdatum.From=&Transaktionsdatum.To=&Publiceringsdatum.From=&Publiceringsdatum.To=&button=search&Page=",2)
+  html<-read_html(url)
+  ds<-html_table(html)[[1]]
+  if(nrow(ds)==0){break}
+  ds$Volym<-as.numeric(str_replace_all(ds$Volym,",",""))
+  df<-bind_rows(df,ds)
+}
+df$Pris<-str_replace_all(df$Pris,",","\\.")
+df$Pris<-df$Pris %>% as.numeric() %>% round(digits = 2)
+df$Pris<-paste(df$Pris, df$Valuta)
+df<-df[1:nrow(df),c(1,3,4,12,11,10,6)]
+colnames(df)<-c("Datum", "Person", "Befattning", "Pris", "Volymenhet", "Volym", "Karaktär")
+
+
+ft <- flextable(df)
+ft <- theme_vanilla(ft)
+ft <- add_footer_lines(ft, paste("Insiderhandel i",bolagsnamn))
+ft <- color(ft, part = "footer", color = "#666666")
+ft <- set_caption(ft, caption = "")
+ft <- flextable::fontsize(ft,size = 12,part = "header")
+ft <- width(ft,width = 0.9,)
+ft <- autofit(ft,part = "header")
+
+ft
+```
+
+
+
+# Finansiell historik
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE,render=FALSE}
+# Aktiekurs
+omxs30<-fetch_stockprice(637,params$key) # 637 är index
+stockprice<-fetch_stockprice(id = params$id,key = params$key)
+library(lubridate)
+stockprice$d<-as.Date(stockprice$d)
+sss<-as.character(Sys.Date()-stockprice$d[1])
+# Om default date är kortare är tidigare i tiden än vad diff_date, då vill vi ha diff_date.
+if(years(2)>days(sss)){
+  great_date<-days(sss)
+  spread<-"2 months"
+} else {
+  great_date<-years(2)
+  spread<-"3 months"
+}
+omxs30$d<-as.Date(omxs30$d)
+stonk<-left_join(omxs30,stockprice,"d") %>% select(d,c.x,c.y) %>% filter(!is.na(c.y)) %>% 
+  rename(Omxs30Index = "c.x", ftg = "c.y") %>% filter(d > Sys.Date()-great_date) %>% 
+  mutate(standard = Omxs30Index/(Omxs30Index[1]/ftg[1]))
+ggplot(stonk,aes(d))+
+  geom_line(aes(y=ftg,colour = bolagsnamn))+
+  geom_line(aes(y=standard,color="OMXS30\nStockholm"))+ theme_bw()+
+  labs(x="Datum", y="Aktiekurs", 
+       title = str_wrap(paste("Aktiekursens utveckling för", bolagsnamn,
+                               "mellan", Sys.Date()-great_date, "och",tail(stockprice$d,1), 
+                               "jämfört med OMXS30 Stockholm"),width = 55))+
+  scale_x_date(date_labels = "%b\n %Y", date_breaks = spread,
+               limits = c(Sys.Date()-great_date,Sys.Date()))+
+   theme(legend.position="bottom",
+         legend.title = element_blank(),
+         plot.title = element_text(hjust = 0.5, size = 12))
+
+
+
+```
+
+
+
+## Största kapitalägarna
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+library(httr)
+library(jsonlite)
+
+# Går absolut att göra snyggare i en loop... Men aint no1 got time fo dat.
+# Har du tid? Skicka denna chunk till mig så uppdaterar jag paketet :) / Jakob
+
+buy<-paste0("https://apiservice.borsdata.se/v1/instruments/kpis/241/last/latest?authKey=",params$key)
+s<-GET(buy)
+content<-content(s)
+values<-content$values 
+test<-tibble(id=map(values, 1), value=map(values, 3))
+
+
+buy<-paste0("https://apiservice.borsdata.se/v1/instruments/kpis/242/last/latest?authKey=",params$key)
+s<-GET(buy)
+content<-content(s)
+values<-content$values 
+test<-left_join(test,tibble(id=map(values, 1), value=map(values, 3)),by = "id")
+
+buy<-paste0("https://apiservice.borsdata.se/v1/instruments/kpis/243/last/latest?authKey=",params$key)
+s<-GET(buy)
+content<-content(s)
+values<-content$values 
+test<-left_join(test,tibble(id=map(values, 1), value=map(values, 3)),by = "id")
+
+buy<-paste0("https://apiservice.borsdata.se/v1/instruments/kpis/244/last/latest?authKey=",params$key)
+s<-GET(buy)
+content<-content(s)
+values<-content$values 
+test<-left_join(test,tibble(id=map(values, 1), value=map(values, 3)),by = "id")
+
+buy<-paste0("https://apiservice.borsdata.se/v1/instruments/kpis/245/last/latest?authKey=",params$key)
+s<-GET(buy)
+content<-content(s)
+values<-content$values 
+test<-left_join(test,tibble(id=map(values, 1), value=map(values, 3)),by = "id")
+
+buy<-paste0("https://apiservice.borsdata.se/v1/instruments/kpis/246/last/latest?authKey=",params$key)
+s<-GET(buy)
+content<-content(s)
+values<-content$values 
+test<-left_join(test,tibble(id=map(values, 1), value=map(values, 3)),by = "id")
+
+buy<-paste0("https://apiservice.borsdata.se/v1/instruments/kpis/247/last/latest?authKey=",params$key)
+s<-GET(buy)
+content<-content(s)
+values<-content$values 
+test<-left_join(test,tibble(id=map(values, 1), value=map(values, 3)),by = "id")
+
+buy<-paste0("https://apiservice.borsdata.se/v1/instruments/kpis/248/last/latest?authKey=",params$key)
+s<-GET(buy)
+content<-content(s)
+values<-content$values 
+test<-left_join(test,tibble(id=map(values, 1), value=map(values, 3)),by = "id")
+
+buy<-paste0("https://apiservice.borsdata.se/v1/instruments/kpis/249/last/latest?authKey=",params$key)
+s<-GET(buy)
+content<-content(s)
+values<-content$values 
+test<-left_join(test,tibble(id=map(values, 1), value=map(values, 3)),by = "id")
+
+
+test3<-test %>% filter(id == params$id)
+null<-purrr::pluck(test3,2) %>% unlist()
+if(is.null(null)){
+  ingen_information<-"Saknar information från Börsdatas API om största kapitalägarna"
+} else {
+  ingen_information<-NA
+  test3<-test3 %>% select(-1) %>% matrix(nrow = 3) %>% 
+  unlist() %>% matrix(ncol=3) %>% as_tibble() %>% rename("Kapital" = V1,
+                                                         "Röster" = V2,
+                                                         "Ägare" = V3)
+  ft <- flextable(test3)
+  ft <- theme_vanilla(ft)
+  ft <- add_footer_lines(ft, paste("Största ägarna i",bolagsnamn))
+  ft <- color(ft, part = "footer", color = "#666666")
+  ft <- set_caption(ft, caption = "")
+  ft <- width(ft,width = 1,)
+  ft <- align(ft, align = "left", part = "all")
+  ft <- autofit(ft)
+
+  ft
+}
+```
+
+`r if(!is.na(ingen_information)){ingen_information}`
+
+### Blankning
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+# Blankningsförändrad - 1 månad
+
+buy<-paste0("https://apiservice.borsdata.se/v1/instruments/kpis/212/last/diff?authKey=",params$key)
+s<-GET(buy)
+content<-content(s)
+values<-content$values
+test<-tibble(id=map(values, 1), `Genomsnittlig förändring i blankning - 1 månad`=map(values, 3))
+
+# Blankning - 1 månad
+buy<-paste0("https://apiservice.borsdata.se/v1/instruments/kpis/208/last/mean?authKey=",params$key)
+s<-GET(buy)
+content<-content(s)
+values<-content$values
+test<-left_join(test,tibble(id=map(values, 1), `Snittblankning - 1 månad`=map(values, 3)),by = "id")
+
+# Blankning - 1 år
+buy<-paste0("https://apiservice.borsdata.se/v1/instruments/kpis/210/last/mean?authKey=",params$key)
+s<-GET(buy)
+content<-content(s)
+values<-content$values
+test<-left_join(test,tibble(id=map(values, 1), `Snittblankning - 1 år`=map(values, 3)),by = "id")
+
+# Återköp - 1 månad
+buy<-paste0("https://apiservice.borsdata.se/v1/instruments/kpis/213/last/sum?authKey=",params$key)
+s<-GET(buy)
+content<-content(s)
+values<-content$values
+test<-left_join(test,tibble(id=map(values, 1), `Återköp av aktier MKR - Totalt - 1 månad`=map(values, 3)),by = "id")
+
+# Återköp - 1 år
+buy<-paste0("https://apiservice.borsdata.se/v1/instruments/kpis/215/last/sum?authKey=",params$key)
+s<-GET(buy)
+content<-content(s)
+values<-content$values
+test<-left_join(test,tibble(id=map(values, 1), `Återköp av aktier MKR - Totalt - 1 år`=map(values, 3)),by = "id")
+
+test3<-test %>% filter(id == params$id) %>% select(-1)
+tmp<-test3
+temp<-tibble(Händelse = colnames(tmp),Värde = t(test3))
+
+if(is.null(test3$`Snittblankning - 1 år`[[1]])){
+  ft<-"Det finns ingen blankning i företaget som är större än 0,5 procent i snitt senaste året."
+
+} else {
+    temp$Värde <- str_replace_all(string = temp$Värde,"NULL","0")
+    ft <- flextable(temp)
+    ft <- theme_vanilla(ft)
+    ft <- add_footer_lines(ft, paste("Blankning och återköp i",bolagsnamn))
+    ft <- color(ft, part = "footer", color = "#666666")
+    ft <- set_caption(ft, caption = "")
+    ft <- width(ft,width = 1,)
+    ft <- autofit(ft)
+    ft
+}
+
+
+```
+
+`r if(class(ft)=="character"){ft}`
+
+# SWOT analys
+
+
+# Värdering
+
+
+```{r, echo=FALSE}
+options(scipen = 999999999)
+r12<-fetch_r12(params$id,params$key) %>% slice(1:19)
+r12$period<-r12$period*3
+for(i in 1:nrow(r12)){
+  if(nchar(r12$period[i])==1){
+    r12$period[i]<-paste0(r12$year[i],"0",r12$period[i],"01")
+  }
+  else{
+    r12$period[i]<-paste0(r12$year[i],r12$period[i],"01")
+  }
+}
+r12$period<-ymd(r12$period)
+
+df<-r12 %>% select(period,revenues,gross_Income,profit_Before_Tax) %>% 
+  rename(time = period,
+         Omsättning = revenues,
+         Bruttovinst = gross_Income,
+         EBIT = profit_Before_Tax) %>% pivot_longer(cols=!time,names_to = "Linjer",values_to = "value")
+
+ggplot(df,aes(x=time,y=value,color=Linjer))+
+  geom_line(size=1.2)+
+  scale_x_date(date_labels = "%b\n %Y",breaks = "8 month")+
+  theme_bw()+
+  labs(x = "Datum",  
+       y = "Miljoner kr",  
+       title = paste0("Generell utveckling för\n",bolagsnamn),
+       caption = "Källa: Börsdata")+
+  theme(axis.title.y =                              
+          element_text(hjust = 0.5,                 
+                       vjust = 0.5),              
+        plot.title =                              
+          element_text(hjust = 0.5,size = 20),
+        panel.grid.major.x =                    
+          element_blank(),                         
+        panel.grid.minor.x =                       
+          element_blank(),
+        panel.grid.minor.y =                       
+          element_line(color = "grey",size=0.5),
+        panel.grid.major.y =                       
+          element_line(color = "grey",size=1),
+        #legend.position = c(0.1, 0.85),
+        legend.title = element_blank(),
+        legend.text = element_text(color = "black", size = 8),
+        axis.title.x.bottom = 
+          element_text(size = 15,face = "bold"),
+        axis.title.y.left = 
+          element_text(size = 15,face = "bold"),
+        axis.text.x.bottom = 
+          element_text(size=8),
+        axis.text.y.left =  
+          element_text(size=12))
+
+```
+
+
+
+## Relativvärdering vs peers i bransch
+
+```{r, echo=FALSE, message=FALSE}
+telecom<-frame %>% filter(Bransch == Branschs)
+if(nrow(telecom)>50){
+  telecom<-telecom %>% filter(Land == "Sverige") 
+  if(nrow(telecom)>30){
+    telecom<-telecom %>% filter(Handelsplats != "Pepins market")
+  }
+}
+
+kpi_table <- ralger::table_scrap("https://github.com/Borsdata-Sweden/API/wiki/KPI-History") %>% 
+  filter(Reporttype == "r12") %>% filter(Pricetype == 
+                                           "mean") %>% arrange(KpiId)
+kpi_table<-kpi_table %>% slice(2,10,26,36)
+
+M<-matrix(nrow = nrow(telecom),ncol = 4)
+for(i in 1:nrow(telecom)){
+  for(j in 1:nrow(kpi_table)){
+    temp <- httr::GET(url = paste0("https://apiservice.borsdata.se/v1/Instruments/", 
+                                  telecom$id[i], "/kpis/",kpi_table$KpiId[j],"/r12/mean/history?authKey=", 
+                                  params$key, "&maxcount=1"))
+    temp <- httr::content(temp, type = "text", encoding = "UTF-8")
+    temp <- jsonlite::fromJSON(temp)
+    temp<-temp %>% as_tibble() %>% select(1,4)
+    if(is.null(temp$values$v)){break}
+    M[i,j]<-temp$values$v
+  }
+  Sys.sleep(0.5)
+}
+colnames(M)<-c("P/E","EV/EBIT","Rörelsemarginal","Soliditet")
+telecom<-M %>% as_tibble() %>% mutate(id = telecom$id) %>% left_join(telecom)
+telecom<-telecom %>% arrange(Rörelsemarginal)
+telecom$Rörelsemarginal<-paste0(round(telecom$Rörelsemarginal,1),"%")
+telecom$Soliditet<-paste0(round(telecom$Soliditet,1),"%")
+telecom<-telecom %>% filter(!is.na(`P/E`))
+
+
+ft <- flextable(telecom[,c(6,1,2,3,4,8,11)])
+ft <- theme_vanilla(ft)
+ft <- add_footer_lines(ft, paste("Peers mot",bolagsnamn))
+ft <- color(ft, part = "footer", color = "#666666")
+ft <- set_caption(ft, caption = "")
+ft <- width(ft,width = 0.97,)
+ft <- align(ft,part = "all",align = "center")
+ft <- fontsize(ft,part = "all",size = 11.5)
+ft <- autofit(ft,part = "header")
+
+
+ft
+```
+
+Peers är baserad på branschen som `r bolagsnamn` är verksam inom. Peer jämförelsen ovan är endast nordiska bolag.
+
+\newpage
+
+# Slutsats
+
+\newpage
+# Referenser
+
+* Data hämtad från Börsdata.se
+* Insynshandel - Hämtad `r Sys.Date()` - `r url_pg1`
+
