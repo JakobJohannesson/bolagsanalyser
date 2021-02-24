@@ -5,7 +5,7 @@ output:
     reference_docx: mall.docx
 params:
   id: 750 # Börsdata id - id 750 är Evolution
-  key: "<API KEY>" # Börsdata API nyckel
+  key: "<API key>" # Börsdata API nyckel
 ---
 ```{r check, echo=FALSE, message=FALSE}
 # Kontrollerar att API nyckeln är laddad
@@ -65,6 +65,18 @@ Sektor<-frame %>% filter(id == params$id) %>% select(Sektor) %>% as.character()
 Branschs<-frame %>% filter(id == params$id) %>% select(Bransch) %>% as.character()
 Marknadsplats<-frame %>% filter(id == params$id) %>% select(Marknadsplats) %>% as.character()
 Handelsplats<-frame %>% filter(id == params$id) %>% select(Handelsplats) %>% as.character()
+
+
+download.file(paste0("https://borsdata.blob.core.windows.net/images/spa/logo/",params$id,"-d.png"),destfile = "logga.png")
+
+# Hämtar mer information 
+content<-httr::GET(paste0("https://instrumentsinfoprod.blob.core.windows.net/refinitiv/",params$id,".json"))
+information<-httr::content(content)
+hemsida<-information$webSite
+antal_employed<-information$employees$count
+miljoner_aktier<-round(information$totalSharesOut$totalSharesOut/1000000,1)
+adress<-information$contactInfo$streetAddress
+city<-str_to_title(information$contactInfo$city)
 ```
 
 ---
@@ -85,6 +97,16 @@ title: "Bolagsanalys av `r bolagsnamn`"
 
 `r bolagsnamn` (`r Ticker`) är verksamt inom branschen `r Branschs` som är en del av sektorn `r Sektor`. `r bolagsnamn` noterades `r listdate` och blev då en del av marknadsplatsen `r Marknadsplats` i `r Land`.
 
+`r bolagsnamn` har `r antal_employed` anställda i sitt företag, där huvudkontorets address är `r adress` i `r city`. Totalt finns det `r miljoner_aktier` miljoner akiter och företagets hemsida är *`r hemsida`*.
+
+## Börsdata beskrivning
+```{r, echo=FALSE}
+this<-httr::GET(url = paste0("https://instrumentsinfoprod.blob.core.windows.net/refinitiv/",params$id,"_sv-SE.json"))
+content<-httr::content(this)
+beskrivning<-content$businessSummary[[1]]
+```
+
+`r beskrivning`
 
 ## Affärsidé
 
