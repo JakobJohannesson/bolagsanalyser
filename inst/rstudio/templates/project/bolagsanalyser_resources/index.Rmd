@@ -5,7 +5,7 @@ output:
     reference_docx: mall.docx
 params:
   id: 750 # Börsdata id - id 750 är Evolution
-  key: "<API key>" # Börsdata API nyckel
+  key: "<api key>" # Börsdata API nyckel
 ---
 ```{r check, echo=FALSE, message=FALSE}
 # Kontrollerar att API nyckeln är laddad
