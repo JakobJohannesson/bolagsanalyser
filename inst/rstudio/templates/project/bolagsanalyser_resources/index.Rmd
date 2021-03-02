@@ -67,7 +67,7 @@ Marknadsplats<-frame %>% filter(id == params$id) %>% select(Marknadsplats) %>% a
 Handelsplats<-frame %>% filter(id == params$id) %>% select(Handelsplats) %>% as.character()
 
 
-download.file(paste0("https://borsdata.blob.core.windows.net/images/spa/logo/",params$id,"-d.png"),destfile = "logga.png")
+download.file(url = paste0("https://borsdata.blob.core.windows.net/images/spa/logo/",params$id,"-d.png"),destfile = "logga.png","curl")
 
 # Hämtar mer information 
 content<-httr::GET(paste0("https://instrumentsinfoprod.blob.core.windows.net/refinitiv/",params$id,".json"))
