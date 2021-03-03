@@ -7,6 +7,7 @@ params:
   id: 750 # Börsdata id - id 750 är Evolution
   key: "<api key>" # Börsdata API nyckel
 ---
+
 ```{r check, echo=FALSE, message=FALSE}
 # Kontrollerar att API nyckeln är laddad
 if(httr::GET(paste0("https://apiservice.borsdata.se/v1/instruments/kpis/241/last/latest?authKey=",params$key))[2]!=200){stop("Lägg in din Börsdata API nyckel på rad 8 i dokumentet")}
@@ -14,11 +15,17 @@ if(httr::GET(paste0("https://apiservice.borsdata.se/v1/instruments/kpis/241/last
 
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+# install.packages("tidyverse)
+# devtools::install_github("jakobjohannesson/borsdata")
+# devtools::install_github("jakobjohannesson/bolagsanalyser")
 library(tidyverse)
 library(borsdata)
 library(rvest)
 library(flextable)
+library(httr)
+library(jsonlite)
+library(lubridate)
+
 set_flextable_defaults(big.mark = ",", 
   font.size = 12,digits = 0, theme_fun = theme_vanilla,
   padding.bottom = 0, 
@@ -83,15 +90,6 @@ city<-str_to_title(information$contactInfo$city)
 title: "Bolagsanalys av `r bolagsnamn`" 
 ---
 
-# Nyckelfaktorer
-
-### Nyckelfaktor 1
-
-- 
-
-### Nyktorfaktor 2
-
-- 
 
 # Om `r bolagsnamn` 
 
@@ -108,17 +106,6 @@ beskrivning<-content$businessSummary[[1]]
 
 `r beskrivning`
 
-## Affärsidé
-
-# Verksamhet och produkter
-
-## Risker
-
-## Konkurrenter
-
-### Moats
-
-# Ledning och styrelse
 
 ## Insiderhandel
 
@@ -153,22 +140,22 @@ ft <- theme_vanilla(ft)
 ft <- add_footer_lines(ft, paste("Insiderhandel i",bolagsnamn))
 ft <- color(ft, part = "footer", color = "#666666")
 ft <- set_caption(ft, caption = "")
-ft <- flextable::fontsize(ft,size = 11,part = "header")
-ft <- width(ft,width = 0.83,)
+ft <- flextable::fontsize(ft,size = 10,part = "all")
+ft <- width(ft,width = 0.88,)
 ft <- autofit(ft,part = "header")
 
 ft
 ```
 
+<br>
 
 
-# Finansiell historik
+## Finansiell historik
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE, fig.width=10,fig.height=7}
 # Aktiekurs
 omxs30<-fetch_stockprice(637,params$key) # 637 är index
 stockprice<-fetch_stockprice(id = params$id,key = params$key)
-library(lubridate)
 stockprice$d<-as.Date(stockprice$d)
 sss<-as.character(Sys.Date()-stockprice$d[1])
 # Om default date är kortare är tidigare i tiden än vad diff_date, då vill vi ha diff_date.
@@ -217,20 +204,13 @@ ggplot(stonk,aes(d))+
 ```
 
 
+<br>
 
-
-
-
-## Största kapitalägarna
+## Största ägarna
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
-library(httr)
-library(jsonlite)
 
-# Går absolut att göra snyggare i en loop... Men aint no1 got time fo dat.
-# Har du tid? Skicka denna chunk till mig så uppdaterar jag paketet :) / Jakob
-
-buy<-paste0("https://apiservice.borsdata.se/v1/instruments/kpis/241/last/latest?authKey=",params$key)
+buy<-paste0("https://apiservice.borsdata.se/v1/instruments/kpis/",241,"/last/latest?authKey=",params$key)
 s<-GET(buy)
 content<-content(s)
 values<-content$values 
@@ -311,6 +291,8 @@ if(is.null(null)){
 
 `r if(!is.na(ingen_information)){ingen_information}`
 
+<br>
+
 ### Blankning
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
@@ -374,10 +356,9 @@ if(is.null(test3$`Snittblankning - 1 år`[[1]])){
 
 `r if(class(ft)=="character"){ft}`
 
-# SWOT analys
+<br>
 
-
-# Värdering
+## Värdering
 
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE, fig.width=10,fig.height=7}
@@ -433,7 +414,7 @@ ggplot(df,aes(x=time,y=value,color=Linjer))+
 
 ```
 
-
+<br>
 
 ## Relativvärdering vs peers i bransch
 
@@ -487,11 +468,8 @@ ft <- autofit(ft,part = "header")
 ft
 ```
 
-Peers är baserad på branschen som `r bolagsnamn` är verksam inom. Peer jämförelsen ovan är endast nordiska bolag.
 
-\newpage
 
-# Slutsats
 
 \newpage
 # Referenser
