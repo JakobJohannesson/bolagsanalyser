@@ -3,15 +3,6 @@ Type: Package
 Title: Bolagsanalyser hjälper dig att genomföra reproducerbara bolagsanalyser
 Version: 0.1.0
 Author: Jakob Johannesson
-Imports:
-    httr,
-    jsonlite,
-    dplyr,
-    ralger,
-    rvest,
-    tidyverse,
-    flextable,
-    lubridate
 Maintainer: Jakob Johannesson <jakob@jakobj.se>
 Description: Läs mer om paketet på GitHub under jakobjohannesson/bolagsanalyser
 License: MIT

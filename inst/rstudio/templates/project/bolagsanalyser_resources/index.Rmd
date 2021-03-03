@@ -15,7 +15,7 @@ if(httr::GET(paste0("https://apiservice.borsdata.se/v1/instruments/kpis/241/last
 
 
 ```{r setup, include=FALSE}
-# install.packages("tidyverse)
+# install.packages("tidyverse")
 # devtools::install_github("jakobjohannesson/borsdata")
 # devtools::install_github("jakobjohannesson/bolagsanalyser")
 library(tidyverse)
