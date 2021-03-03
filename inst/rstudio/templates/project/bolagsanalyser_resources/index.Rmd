@@ -93,7 +93,7 @@ title: "Bolagsanalys av `r bolagsnamn`"
 
 # Om `r bolagsnamn` 
 
-`r bolagsnamn` (`r Ticker`) är verksamt inom branschen `r Branschs` som är en del av sektorn `r Sektor`. `r bolagsnamn` noterades `r listdate` och blev då en del av marknadsplatsen `r Marknadsplats` i `r Land`.
+`r bolagsnamn` (`r Ticker`) är verksamt inom branschen `r Branschs` som är en del av sektorn `r Sektor`. `r bolagsnamn` noterades `r listdate` och är listat på `r Marknadsplats` i `r Land`.
 
 `r bolagsnamn` har `r antal_employed` anställda i sitt företag, där huvudkontorets address är `r adress` i `r city`. Totalt finns det `r miljoner_aktier` miljoner akiter och företagets hemsida är *`r hemsida`*.
 
