@@ -8,7 +8,7 @@ validering och uppdatering av datamaterial. Därför skapade jag
 bolagsanalyser.
 
 Målet med paketet bolagsanalyser är att leverera en komplett
-reproducerbar analys process till en bredare skara investerare.
+reproducerbar analysprocess till en bredare skara investerare.
 Bolagsanalyser är främst riktat till personer som har tillgång till
 Börsdatas API, men om intresse finns kan även mallar för personer som
 inte har tillgång till Börsdatas API skapas.
@@ -41,6 +41,8 @@ skriva i Word.
 
 ``` r
 devtools::install_github("jakobjohannesson/bolagsanalyser")
+# Ladda även ner mitt tidigare paket borsdata
+devtools::install_github("jakobjohannesson/borsdata")
 ```
 
 ## Kom igång
@@ -53,9 +55,12 @@ igång.
 Börja med att starta Rstudio, gå till konsolen (“Console”), kör sedan
 “devtools::install\_github(”jakobjohannesson/bolagsanalyser“)”. Om du
 inte har devtools så kan du installera det först genom att köra
-“install.packages(”devtools“)”. För att starta en ny bolagsanalys, gå
-till “File –&gt; New project –&gt; New directory –&gt; Bolagsanalys med
-Bolagsanalyser –&gt; Ange namnet på bolaget –&gt; Create project”.
+“install.packages(”devtools“)”. Ett paket som även behövs är mitt
+tidigare r-paket
+*[{Borsdata}](https://www.github.com/jakobjohannesson/borsdata)*. För
+att starta en ny bolagsanalys, gå till “File –&gt; New project –&gt; New
+directory –&gt; Bolagsanalys med Bolagsanalyser –&gt; Ange namnet på
+bolaget –&gt; Create project”.
 
 Nu är du inne i ett nytt projekt. Du får direkt fem olika filer:
 “mall.docx”, “.rmd”, “.Rproj”, “.gitignore”, "\_bookdown.yml" och
@@ -68,8 +73,9 @@ Börsdata API nyckel på rad 8.**
 **ID:** Ändra även id på rad 7 till det företagets börsdata id som du
 vill ha, den är standardaliserad till Evolution med id 750. Det går att
 få ut “Börsdata id” värdet från Börsdatas terminal i beskrivningen på
-företaget eller använda mitt tidigare paket “Börsdata” och funktionen
-“fetch\_instruments”.
+företaget eller använda mitt tidigare paket
+*[{Borsdata}](https://www.github.com/jakobjohannesson/borsdata)* och
+funktionen “fetch\_instruments”.
 
 I RMD filen kommer du att skriva din bolagsanalys. Det kanske är
 konstigt och svårt i början, men systemet är väldigt enkelt när man lär
@@ -83,10 +89,11 @@ Inget av innehållet i denna mall används.
 Bilden “Bolagsanalyser\_logga.png” är loggan som används i outputen till
 “mall.docx”, om du vill ha en egen logga så ändra på denna. Filerna
 "\_bookdown.yml“,”Rproj" samt “.gitignore” behöver inte ändras.
+“logga.png” är loggan för företaget som du analyserar.
 
 ## Kontakta mig
 
 Undrar du något kring paketet? Skicka ett mail till mig:
 <jakob@jakobj.se>
 
-Senast uppdaterad 2021-02-23.
+Senast uppdaterad 2021-03-03.

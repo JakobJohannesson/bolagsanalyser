@@ -67,7 +67,7 @@ Marknadsplats<-frame %>% filter(id == params$id) %>% select(Marknadsplats) %>% a
 Handelsplats<-frame %>% filter(id == params$id) %>% select(Handelsplats) %>% as.character()
 
 
-download.file(url = paste0("https://borsdata.blob.core.windows.net/images/spa/logo/",params$id,"-d.png"),destfile = "logga.png","curl")
+download.file(url = paste0("https://borsdata.blob.core.windows.net/images/spa/logo/",params$id,"-d.png"),destfile = "logga.png","curl",quiet = TRUE)
 
 # Hämtar mer information 
 content<-httr::GET(paste0("https://instrumentsinfoprod.blob.core.windows.net/refinitiv/",params$id,".json"))
@@ -153,8 +153,8 @@ ft <- theme_vanilla(ft)
 ft <- add_footer_lines(ft, paste("Insiderhandel i",bolagsnamn))
 ft <- color(ft, part = "footer", color = "#666666")
 ft <- set_caption(ft, caption = "")
-ft <- flextable::fontsize(ft,size = 12,part = "header")
-ft <- width(ft,width = 0.9,)
+ft <- flextable::fontsize(ft,size = 11,part = "header")
+ft <- width(ft,width = 0.83,)
 ft <- autofit(ft,part = "header")
 
 ft
@@ -164,7 +164,7 @@ ft
 
 # Finansiell historik
 
-```{r, echo=FALSE, warning=FALSE, message=FALSE,render=FALSE}
+```{r, echo=FALSE, warning=FALSE, message=FALSE, fig.width=10,fig.height=7}
 # Aktiekurs
 omxs30<-fetch_stockprice(637,params$key) # 637 är index
 stockprice<-fetch_stockprice(id = params$id,key = params$key)
@@ -177,28 +177,47 @@ if(years(2)>days(sss)){
   spread<-"2 months"
 } else {
   great_date<-years(2)
-  spread<-"3 months"
+  spread<-"10 weeks"
 }
 omxs30$d<-as.Date(omxs30$d)
 stonk<-left_join(omxs30,stockprice,"d") %>% select(d,c.x,c.y) %>% filter(!is.na(c.y)) %>% 
   rename(Omxs30Index = "c.x", ftg = "c.y") %>% filter(d > Sys.Date()-great_date) %>% 
   mutate(standard = Omxs30Index/(Omxs30Index[1]/ftg[1]))
 ggplot(stonk,aes(d))+
-  geom_line(aes(y=ftg,colour = bolagsnamn))+
-  geom_line(aes(y=standard,color="OMXS30\nStockholm"))+ theme_bw()+
+  geom_line(aes(y=ftg,colour = bolagsnamn), size=1.1)+
+  geom_line(aes(y=standard,color="OMXS30\nStockholm"), size=1.1)+ theme_bw()+
   labs(x="Datum", y="Aktiekurs", 
        title = str_wrap(paste("Aktiekursens utveckling för", bolagsnamn,
                                "mellan", Sys.Date()-great_date, "och",tail(stockprice$d,1), 
                                "jämfört med OMXS30 Stockholm"),width = 55))+
   scale_x_date(date_labels = "%b\n %Y", date_breaks = spread,
                limits = c(Sys.Date()-great_date,Sys.Date()))+
-   theme(legend.position="bottom",
+  theme(plot.title =                              
+          element_text(hjust = 0.5,size = 24),
+        panel.grid.major.x =                    
+          element_blank(),                         
+        panel.grid.minor.x =                       
+          element_blank(),
+        panel.grid.major.y =                       
+          element_line(color = "grey",size=1),
+        legend.position="bottom",
          legend.title = element_blank(),
-         plot.title = element_text(hjust = 0.5, size = 12))
+        legend.text = element_text(color = "black", size = 22),
+        axis.title.x.bottom = 
+          element_text(size = 22,face = "bold"),
+        axis.title.y.left = 
+          element_text(size = 22,face = "bold"),
+        axis.text.x.bottom = 
+          element_text(size=20),
+        axis.text.y.left =  
+          element_text(size=20))
 
 
 
 ```
+
+
+
 
 
 
@@ -282,7 +301,7 @@ if(is.null(null)){
   ft <- add_footer_lines(ft, paste("Största ägarna i",bolagsnamn))
   ft <- color(ft, part = "footer", color = "#666666")
   ft <- set_caption(ft, caption = "")
-  ft <- width(ft,width = 1,)
+  ft <- width(ft,width = 2,)
   ft <- align(ft, align = "left", part = "all")
   ft <- autofit(ft)
 
@@ -345,7 +364,7 @@ if(is.null(test3$`Snittblankning - 1 år`[[1]])){
     ft <- add_footer_lines(ft, paste("Blankning och återköp i",bolagsnamn))
     ft <- color(ft, part = "footer", color = "#666666")
     ft <- set_caption(ft, caption = "")
-    ft <- width(ft,width = 1,)
+    ft <- width(ft,width = 2.55,)
     ft <- autofit(ft)
     ft
 }
@@ -361,7 +380,7 @@ if(is.null(test3$`Snittblankning - 1 år`[[1]])){
 # Värdering
 
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, warning=FALSE, message=FALSE, fig.width=10,fig.height=7}
 options(scipen = 999999999)
 r12<-fetch_r12(params$id,params$key) %>% slice(1:19)
 r12$period<-r12$period*3
@@ -383,36 +402,34 @@ df<-r12 %>% select(period,revenues,gross_Income,profit_Before_Tax) %>%
 
 ggplot(df,aes(x=time,y=value,color=Linjer))+
   geom_line(size=1.2)+
-  scale_x_date(date_labels = "%b\n %Y",breaks = "8 month")+
+  scale_x_date(date_labels = "%b %Y",breaks = "3 month")+
   theme_bw()+
   labs(x = "Datum",  
        y = "Miljoner kr",  
-       title = paste0("Generell utveckling för\n",bolagsnamn),
+       title = paste0("Omsättning, bruttovinst och EBIT\n",bolagsnamn),
        caption = "Källa: Börsdata")+
-  theme(axis.title.y =                              
-          element_text(hjust = 0.5,                 
-                       vjust = 0.5),              
-        plot.title =                              
-          element_text(hjust = 0.5,size = 20),
+  theme(plot.title =                              
+          element_text(hjust = 0.5,size = 29),
+        plot.caption = element_text(size = 20),
         panel.grid.major.x =                    
-          element_blank(),                         
+          element_line(color = "grey",size=0.5),                         
         panel.grid.minor.x =                       
-          element_blank(),
+          element_blank(),                         
         panel.grid.minor.y =                       
-          element_line(color = "grey",size=0.5),
+          element_line(color = "grey",size=0.2),
         panel.grid.major.y =                       
-          element_line(color = "grey",size=1),
-        #legend.position = c(0.1, 0.85),
-        legend.title = element_blank(),
-        legend.text = element_text(color = "black", size = 8),
+          element_line(color = "grey",size=0.5),
+        legend.position="bottom",
+         legend.title = element_blank(),
+        legend.text = element_text(color = "black", size = 24),
         axis.title.x.bottom = 
-          element_text(size = 15,face = "bold"),
+          element_text(size = 28,face = "bold"),
         axis.title.y.left = 
-          element_text(size = 15,face = "bold"),
+          element_text(size = 25,face = "bold"),
         axis.text.x.bottom = 
-          element_text(size=8),
+          element_text(size=20,angle = 90,vjust = 0.5),
         axis.text.y.left =  
-          element_text(size=12))
+          element_text(size=20))
 
 ```
 
@@ -446,7 +463,7 @@ for(i in 1:nrow(telecom)){
     if(is.null(temp$values$v)){break}
     M[i,j]<-temp$values$v
   }
-  Sys.sleep(0.5)
+  Sys.sleep(0.2)
 }
 colnames(M)<-c("P/E","EV/EBIT","Rörelsemarginal","Soliditet")
 telecom<-M %>% as_tibble() %>% mutate(id = telecom$id) %>% left_join(telecom)
@@ -461,9 +478,9 @@ ft <- theme_vanilla(ft)
 ft <- add_footer_lines(ft, paste("Peers mot",bolagsnamn))
 ft <- color(ft, part = "footer", color = "#666666")
 ft <- set_caption(ft, caption = "")
-ft <- width(ft,width = 0.97,)
+ft <- width(ft,width = 0.7,)
 ft <- align(ft,part = "all",align = "center")
-ft <- fontsize(ft,part = "all",size = 11.5)
+ft <- fontsize(ft,part = "all",size = 9.8)
 ft <- autofit(ft,part = "header")
 
 
@@ -481,4 +498,3 @@ Peers är baserad på branschen som `r bolagsnamn` är verksam inom. Peer jämf�
 
 * Data hämtad från Börsdata.se
 * Insynshandel - Hämtad `r Sys.Date()` - `r url_pg1`
-
