@@ -23,6 +23,11 @@ Fler fördelar är att du skapar nya projekt för varje bolagsanalys som du gör
 
 Nackdelen med att använda sig av paketet är att det är svårt att göra en mall som är lika snygg som exempelvis en CFA analys. En annan nackdel är att du behöver använda dig av R, vilket kanske inte passar alla. Generellt är det främst text som man kommer att skriva (precis som en vanlig rapport som är skriven i Word), därför kanske detta inte är något problem. Efter ett tag är det lättare att skriva i R än vad det är att skriva i Word.
 
+## Se exempel
+
+#### _[Evolution](https://www.jakobj.se/test/evolution.pdf)_
+#### _[Fortnox](https://www.jakobj.se/test/fortnox.pdf)_
+
 ## Installera Bolagsanalyser
 
 ``` r

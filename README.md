@@ -37,6 +37,12 @@ vanlig rapport som är skriven i Word), därför kanske detta inte är något
 problem. Efter ett tag är det lättare att skriva i R än vad det är att
 skriva i Word.
 
+## Se exempel
+
+#### *[Evolution](https://www.jakobj.se/test/evolution.pdf)*
+
+#### *[Fortnox](https://www.jakobj.se/test/fortnox.pdf)*
+
 ## Installera Bolagsanalyser
 
 ``` r
