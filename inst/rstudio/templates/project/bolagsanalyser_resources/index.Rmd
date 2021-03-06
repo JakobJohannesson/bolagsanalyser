@@ -13,7 +13,6 @@ params:
 if(httr::GET(paste0("https://apiservice.borsdata.se/v1/instruments/kpis/241/last/latest?authKey=",params$key))[2]!=200){stop("Lägg in din Börsdata API nyckel på rad 8 i dokumentet")}
 ```
 
-
 ```{r setup, include=FALSE}
 # install.packages("tidyverse")
 # devtools::install_github("jakobjohannesson/borsdata")
@@ -87,17 +86,17 @@ city<-str_to_title(information$contactInfo$city)
 ```
 
 ---
-title: "Bolagsanalys av `r bolagsnamn`" 
+title: "Bolagsanalys av `r bolagsnamn`"
 ---
 
-
-# Om `r bolagsnamn` 
+# Om `r bolagsnamn`
 
 `r bolagsnamn` (`r Ticker`) är verksamt inom branschen `r Branschs` som är en del av sektorn `r Sektor`. `r bolagsnamn` noterades `r listdate` och är listat på `r Marknadsplats` i `r Land`.
 
 `r bolagsnamn` har `r antal_employed` anställda i sitt företag, där huvudkontorets address är `r adress` i `r city`. Totalt finns det `r miljoner_aktier` miljoner akiter och företagets hemsida är *`r hemsida`*.
 
 ## Börsdata beskrivning
+
 ```{r, echo=FALSE}
 this<-httr::GET(url = paste0("https://instrumentsinfoprod.blob.core.windows.net/refinitiv/",params$id,"_sv-SE.json"))
 content<-httr::content(this)
@@ -105,7 +104,6 @@ beskrivning<-content$businessSummary[[1]]
 ```
 
 `r beskrivning`
-
 
 ## Insiderhandel
 
@@ -148,7 +146,6 @@ ft
 ```
 
 <br>
-
 
 ## Finansiell historik
 
@@ -202,7 +199,6 @@ ggplot(stonk,aes(d))+
 
 
 ```
-
 
 <br>
 
@@ -360,7 +356,6 @@ if(is.null(test3$`Snittblankning - 1 år`[[1]])){
 
 ## Värdering
 
-
 ```{r, echo=FALSE, warning=FALSE, message=FALSE, fig.width=10,fig.height=7}
 options(scipen = 999999999)
 r12<-fetch_r12(params$id,params$key) %>% slice(1:19)
@@ -468,11 +463,9 @@ ft <- autofit(ft,part = "header")
 ft
 ```
 
-
-
-
 \newpage
+
 # Referenser
 
-* Data hämtad från Börsdata.se
-* Insynshandel - Hämtad `r Sys.Date()` - `r url_pg1`
+-   Data hämtad från Börsdata.se
+-   Insynshandel - Hämtad `r Sys.Date()` - `r url_pg1`
